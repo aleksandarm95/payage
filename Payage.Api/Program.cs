@@ -1,5 +1,6 @@
 
 using FluentValidation;
+using Payage.Api.Common.Middleware;
 using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Infrastructure.Db;
@@ -25,6 +26,7 @@ namespace Payage.Api
             builder.Services.AddScoped<AuthorizePaymentRepository>();
 
             var app = builder.Build();
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

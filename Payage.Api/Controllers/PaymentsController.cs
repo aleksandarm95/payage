@@ -1,9 +1,6 @@
-using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
-using Payage.Api.Infrastructure.Db;
-using System.Threading.Tasks;
 
 namespace Payage.Api.Controllers
 {
@@ -19,14 +16,6 @@ namespace Payage.Api.Controllers
             var response = await authorizePaymentHandler.HandleAsync(authorizePaymentRequest, cancellationToken);
 
             return CreatedAtAction(nameof(Authorize), response);
-        }
-
-        [HttpGet("db-ping")]
-        public async Task<IActionResult> DbPing([FromServices] IDbConnectionFactory db)
-        {
-            using var conn = db.Create();
-            var result = await conn.ExecuteScalarAsync<int>("SELECT 1;");
-            return Ok(new { ok = result == 1 });
         }
     }
 }
