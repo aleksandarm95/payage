@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Payage.Api.Common.Exceptions;
 using Payage.Api.Features.Payments.Authorize;
 using System.Net;
 
@@ -44,6 +45,48 @@ namespace Payage.Api.Common.Middleware
                         code = "CONFLICT",
                         message = orcEx.Message,
                         details = new[] { new { field = "orderReference", message = "Duplicate order reference" } }
+                    }
+                });
+            }
+            catch(TransactionNotFoundException tnEx)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = new
+                    {
+                        code = "TRANSACTION_NOT_FOUND",
+                        message = tnEx.Message,
+                        details = new[] { new { field = "id", message = "Transaction not found" } }
+                    }
+                });
+            }
+            catch(InvalidTransactionStateException invsEx)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = new
+                    {
+                        code = "INVALID_TRANSACTION_STATE",
+                        message = invsEx.Message,
+                        details = new[] { new { field = "status", message = "Expected AUTHORIZED" } }
+                    }
+                });
+            }
+            catch (CaptureAmountExceedsAuthorizedException caeEx)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = new
+                    {
+                        code = "CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED",
+                        message = caeEx.Message,
+                        details = new[] { new { field = "amount", message = "Must be less than authorized amount" } }
                     }
                 });
             }

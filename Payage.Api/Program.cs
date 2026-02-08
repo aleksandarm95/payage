@@ -3,6 +3,8 @@ using FluentValidation;
 using Payage.Api.Common.Middleware;
 using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
+using Payage.Api.Features.Payments.Capture;
+using Payage.Api.Features.Payments.Capture.Model;
 using Payage.Api.Infrastructure.Db;
 
 namespace Payage.Api
@@ -16,7 +18,6 @@ namespace Payage.Api
             // Add services to the container.
 
             builder.Services.AddControllers();
-            builder.Services.AddScoped<IValidator<AuthorizePaymentRequest>, AuthorizePaymentValidator>();
             
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -24,6 +25,11 @@ namespace Payage.Api
             builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
             builder.Services.AddScoped<AuthorizePaymentHandler>();
             builder.Services.AddScoped<AuthorizePaymentRepository>();
+            builder.Services.AddScoped<IValidator<AuthorizePaymentRequest>, AuthorizePaymentValidator>();
+            builder.Services.AddScoped<CapturePaymentRepository>();
+            builder.Services.AddScoped<CapturePaymentHandler>();
+            builder.Services.AddScoped<IValidator<CapturePaymentRequest>, CapturePaymentValidator>();
+
 
             var app = builder.Build();
             app.UseMiddleware<ExceptionHandlingMiddleware>();

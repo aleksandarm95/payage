@@ -27,7 +27,7 @@ namespace Payage.Api.Features.Payments.Authorize
             if (!validation.IsValid)
                 throw new ValidationException(validation.Errors);
 
-            var time = DateTimeOffset.UtcNow;
+            var timeNow = DateTimeOffset.UtcNow;
             var id = Guid.NewGuid();
             var masked = MaskCard(request.CardNumber);
 
@@ -40,9 +40,9 @@ namespace Payage.Api.Features.Payments.Authorize
             {
                 await _repository.InsertTransactionAsync(dbConnection, dbTransaction, 
                     id, request.OrderReference, request.Amount, request.Currency,
-                    masked, request.CardholderName, time);
+                    masked, request.CardholderName, timeNow);
 
-                await _repository.InsertAuthorizedEventAsync(dbConnection, dbTransaction, id, time);
+                await _repository.InsertAuthorizedEventAsync(dbConnection, dbTransaction, id, timeNow);
 
                 dbTransaction.Commit();
 
@@ -52,7 +52,7 @@ namespace Payage.Api.Features.Payments.Authorize
                     Amount: request.Amount,
                     Currency: request.Currency,
                     MaskedCardNumber: masked,
-                    CreatedAt: time
+                    CreatedAt: timeNow
                 );
             }
             catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
