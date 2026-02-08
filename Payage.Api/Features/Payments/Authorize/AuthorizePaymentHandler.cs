@@ -2,6 +2,7 @@
 using FluentValidation;
 using Npgsql;
 using Payage.Api.Common;
+using Payage.Api.Common.Exceptions;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Infrastructure.Db;
 
@@ -58,7 +59,6 @@ namespace Payage.Api.Features.Payments.Authorize
             catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
             {
                 dbTransaction.Rollback();
-                // We'll map this to 409 in controller for now
                 throw new OrderReferenceConflictException(request.OrderReference, ex);
             }
             catch
@@ -76,17 +76,6 @@ namespace Payage.Api.Features.Payments.Authorize
             var stars = new string('*', digits.Length - 10);
 
             return $"{first6}{stars}{last4}";
-        }
-    }
-
-    public sealed class OrderReferenceConflictException : Exception
-    {
-        public string OrderReference { get; }
-
-        public OrderReferenceConflictException(string orderReference, Exception inner)
-            : base($"Order reference '{orderReference}' already exists.", inner)
-        {
-            OrderReference = orderReference;
         }
     }
 }

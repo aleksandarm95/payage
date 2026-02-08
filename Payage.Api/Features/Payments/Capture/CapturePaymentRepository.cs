@@ -31,21 +31,6 @@ namespace Payage.Api.Features.Payments.Capture
         VALUES (@Id, 'CAPTURED', @Amount, NULL, @Now);
         ";
 
-        private const string GET_PAYMENT_SQL = @"
-        SELECT 
-            id AS Id, 
-            status AS Status, 
-            amount AS Amount, 
-            currency AS Currency, 
-            captured_amount AS CapturedAmount,
-            masked_card_number AS MaskedCardNumber,
-            cardholder_name AS CardholderName,
-            created_at AS CreatedAt,
-            updated_at AS UpdatedAt
-        FROM transactions
-         WHERE id = @PaymentId;
-        ";
-
         public Task<CapturePaymentData?> TryCaptureAsync(IDbConnection dbConnection, IDbTransaction dbTransaction, Guid id, decimal captureAmount, DateTimeOffset now)
             => dbConnection.QuerySingleOrDefaultAsync<CapturePaymentData>(
                 CAPTURE_SQL,
@@ -68,27 +53,5 @@ namespace Payage.Api.Features.Payments.Capture
                     Now = now 
                 },
                 transaction: dbTransaction);
-
-        public async Task<PaymentData?> GetPaymentAsync(IDbConnection dbConnection, IDbTransaction dbTransaction, Guid paymentId, CancellationToken cancellationToken) 
-            => await dbConnection.QuerySingleOrDefaultAsync<PaymentData>(
-                GET_PAYMENT_SQL,
-                new
-                {
-                    PaymentId = paymentId
-                },
-                transaction: dbTransaction);
-    }
-
-    public class PaymentData
-    {
-        public Guid Id { get; set; }
-        public string Status { get; set; } = default!;
-        public decimal Amount { get; set; }
-        public string Currency { get; set; } = default!;
-        public decimal CapturedAmount { get; set; }
-        public string MaskedCardNumber { get; set; } = default!;
-        public string CardholderName { get; set; } = default!;
-        public DateTimeOffset CreatedAt { get; set; }
-        public DateTimeOffset UpdatedAt { get; set; }
     }
 }

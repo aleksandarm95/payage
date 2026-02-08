@@ -5,6 +5,8 @@ using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Features.Payments.Capture;
 using Payage.Api.Features.Payments.Capture.Model;
+using Payage.Api.Features.Payments.Shared;
+using Payage.Api.Features.Payments.Void;
 using Payage.Api.Infrastructure.Db;
 
 namespace Payage.Api
@@ -23,13 +25,19 @@ namespace Payage.Api
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+
             builder.Services.AddScoped<AuthorizePaymentHandler>();
             builder.Services.AddScoped<AuthorizePaymentRepository>();
             builder.Services.AddScoped<IValidator<AuthorizePaymentRequest>, AuthorizePaymentValidator>();
+
             builder.Services.AddScoped<CapturePaymentRepository>();
             builder.Services.AddScoped<CapturePaymentHandler>();
             builder.Services.AddScoped<IValidator<CapturePaymentRequest>, CapturePaymentValidator>();
 
+            builder.Services.AddScoped<VoidPaymentRepository>();
+            builder.Services.AddScoped<VoidPaymentHandler>();
+
+            builder.Services.AddScoped<PaymentRepository>();
 
             var app = builder.Build();
             app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -44,7 +52,6 @@ namespace Payage.Api
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 

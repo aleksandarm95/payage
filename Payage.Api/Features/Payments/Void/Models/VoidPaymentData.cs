@@ -1,12 +1,11 @@
-﻿namespace Payage.Api.Features.Payments.Capture.Model
+﻿namespace Payage.Api.Features.Payments.Void.Models
 {
-    public class CapturePaymentData
+    public class VoidPaymentData
     {
         public Guid Id { get; set; }
         public string Status { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public string Currency { get; set; } = string.Empty;
-        public decimal CapturedAmount { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
     }
 }

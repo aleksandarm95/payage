@@ -3,6 +3,8 @@ using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Features.Payments.Capture;
 using Payage.Api.Features.Payments.Capture.Model;
+using Payage.Api.Features.Payments.Void;
+using Payage.Api.Features.Payments.Void.Models;
 
 namespace Payage.Api.Controllers
 {
@@ -27,6 +29,15 @@ namespace Payage.Api.Controllers
         {
             var response = await capturePaymentHandler.HandleAsync(id, capturePaymentRequest, cancellationToken);
 
+            return Ok(response);
+        }
+
+        [HttpPost("{id:guid}/void")]
+        [ProducesResponseType(typeof(VoidPaymentResponse), StatusCodes.Status200OK)]
+        public async Task<ActionResult<VoidPaymentResponse>> Void([FromRoute] Guid id, [FromServices] VoidPaymentHandler voidPaymentHandler,
+             CancellationToken cancellationToken)
+        {
+            var response = await voidPaymentHandler.HandleAsync(id, cancellationToken);
             return Ok(response);
         }
     }
