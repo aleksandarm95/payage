@@ -30,7 +30,7 @@ namespace Payage.Api.Features.Payments.Void
 
             try
             {
-                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId, cancellationToken);
+                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
                 if (currentPayment == null)
                     throw new TransactionNotFoundException(paymentId);
 
@@ -41,7 +41,7 @@ namespace Payage.Api.Features.Payments.Void
 
                 if (updated is null)
                 {
-                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId, cancellationToken);
+                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
 
                     if (recheckPayment is null)
                         throw new TransactionNotFoundException(paymentId);

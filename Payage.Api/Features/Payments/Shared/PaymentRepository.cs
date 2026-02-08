@@ -19,10 +19,10 @@ namespace Payage.Api.Features.Payments.Shared
             created_at AS CreatedAt,
             updated_at AS UpdatedAt
         FROM transactions
-         WHERE id = @PaymentId;
+            WHERE id = @PaymentId;
         ";
 
-        public async Task<PaymentData?> GetPaymentAsync(IDbConnection dbConnection, IDbTransaction dbTransaction, Guid paymentId, CancellationToken cancellationToken)
+        public async Task<PaymentData?> GetPaymentAsync(IDbConnection dbConnection, IDbTransaction dbTransaction, Guid paymentId)
            => await dbConnection.QuerySingleOrDefaultAsync<PaymentData>(
                GET_PAYMENT_SQL,
                new

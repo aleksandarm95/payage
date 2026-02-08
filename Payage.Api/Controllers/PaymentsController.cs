@@ -5,6 +5,8 @@ using Payage.Api.Features.Payments.Capture;
 using Payage.Api.Features.Payments.Capture.Models;
 using Payage.Api.Features.Payments.Refund;
 using Payage.Api.Features.Payments.Refund.Models;
+using Payage.Api.Features.Payments.Shared;
+using Payage.Api.Features.Payments.Shared.Models;
 using Payage.Api.Features.Payments.Void;
 using Payage.Api.Features.Payments.Void.Models;
 
@@ -50,6 +52,15 @@ namespace Payage.Api.Controllers
         {
             var response = await refundPaymentHandler.HandleAsync(id, refundPaymentRequest, cancellationToken);
 
+            return Ok(response);
+        }
+
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(PaymentData), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PaymentData>> GetById([FromRoute] Guid id, [FromServices] PaymentHandler handler, CancellationToken cancellationToken)
+        {
+            var response = await handler.HandleAsync(id, cancellationToken);
             return Ok(response);
         }
     }

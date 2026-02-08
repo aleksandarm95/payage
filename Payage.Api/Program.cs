@@ -44,6 +44,7 @@ namespace Payage.Api
             builder.Services.AddScoped<IValidator<RefundPaymentRequest>, RefundPaymentValidator>();
 
             builder.Services.AddScoped<PaymentRepository>();
+            builder.Services.AddScoped<PaymentHandler>();
 
             var app = builder.Build();
             app.UseMiddleware<ExceptionHandlingMiddleware>();

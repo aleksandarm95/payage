@@ -40,7 +40,7 @@ namespace Payage.Api.Features.Payments.Refund
 
             try
             {
-                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId, cancellationToken);
+                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
                 if (currentPayment == null)
                     throw new TransactionNotFoundException(paymentId);
 
@@ -58,7 +58,7 @@ namespace Payage.Api.Features.Payments.Refund
                 var updated = await _refundRepository.TryRefundAsync(dbConnection, dbTransaction, paymentId, refundAmount, timeNow);
                 if(updated == null)
                 {
-                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId, cancellationToken);
+                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
                     if (recheckPayment == null)
                         throw new TransactionNotFoundException(paymentId);
 

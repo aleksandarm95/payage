@@ -103,7 +103,7 @@ namespace Payage.Api.Common.Middleware
                     }
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.ContentType = "application/json";

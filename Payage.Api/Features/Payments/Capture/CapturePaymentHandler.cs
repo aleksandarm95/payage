@@ -14,7 +14,7 @@ namespace Payage.Api.Features.Payments.Capture
         private readonly PaymentRepository _paymentRepository;
         private IValidator<CapturePaymentRequest> _validator;
 
-        public CapturePaymentHandler(IDbConnectionFactory dbConnectionFactory, CapturePaymentRepository repository, PaymentRepository paymentRepository,IValidator<CapturePaymentRequest> validator)
+        public CapturePaymentHandler(IDbConnectionFactory dbConnectionFactory, CapturePaymentRepository repository, PaymentRepository paymentRepository, IValidator<CapturePaymentRequest> validator)
         {
             _dbConnectionFactory = dbConnectionFactory;
             _captureRepository = repository;
@@ -38,7 +38,7 @@ namespace Payage.Api.Features.Payments.Capture
 
             try
             {
-                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId, cancellationToken);
+                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
                 if(currentPayment == null)
                     throw new TransactionNotFoundException(paymentId);
 
@@ -58,7 +58,7 @@ namespace Payage.Api.Features.Payments.Capture
                 {
                     // If the update failed => concurrency issue
                     // Recheck the payment to provide accurate error information
-                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId, cancellationToken);
+                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
                     if (recheckPayment == null)
                         throw new TransactionNotFoundException(paymentId);
 
