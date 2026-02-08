@@ -5,11 +5,11 @@
         public Guid TransactionId { get; }
         public string Status { get; }
 
-        public InvalidTransactionStateException(Guid id, string status, string action)
-         : base($"Cannot {action} transaction '{id}' while status is '{status}'.")
+        public InvalidTransactionStateException(Guid id, string currentStatus, string newStatus)
+         : base($"Cannot change to {newStatus}, for transaction '{id}' while status is '{currentStatus}'.")
         {
             TransactionId = id;
-            Status = status;
+            Status = currentStatus;
         }
     }
 }

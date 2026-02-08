@@ -71,8 +71,7 @@ namespace Payage.Api.Common.Middleware
                     error = new
                     {
                         code = "INVALID_TRANSACTION_STATE",
-                        message = invsEx.Message,
-                        details = new[] { new { field = "status", message = "Expected AUTHORIZED" } }
+                        message = invsEx.Message
                     }
                 });
             }
@@ -86,7 +85,21 @@ namespace Payage.Api.Common.Middleware
                     {
                         code = "CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED",
                         message = caeEx.Message,
-                        details = new[] { new { field = "amount", message = "Must be less than authorized amount" } }
+                        details = new[] { new { field = "amount", message = "Must be less than AUTHORIZED amount" } }
+                    }
+                });
+            }
+            catch (RefundAmountExceedsCapturedException refEx)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = new
+                    {
+                        code = "REFUND_AMOUNT_EXCEEDS_CAPTURED",
+                        message = refEx.Message,
+                        details = new[] { new { field = "amount", message = "Must be less than CAPTURED amount" } }
                     }
                 });
             }

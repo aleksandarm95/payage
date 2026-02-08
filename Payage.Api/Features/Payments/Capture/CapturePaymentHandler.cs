@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Payage.Api.Common;
 using Payage.Api.Common.Exceptions;
-using Payage.Api.Features.Payments.Capture.Model;
+using Payage.Api.Features.Payments.Capture.Models;
 using Payage.Api.Features.Payments.Shared;
 using Payage.Api.Infrastructure.Db;
 
@@ -66,7 +66,10 @@ namespace Payage.Api.Features.Payments.Capture
                         throw new InvalidTransactionStateException(paymentId, recheckPayment.Status, Constants.CAPTURE_STATUS);
 
                     var reRemainingAmount = recheckPayment.Amount - recheckPayment.CapturedAmount;
-                    throw new CaptureAmountExceedsAuthorizedException(paymentId, reRemainingAmount, reRemainingAmount);
+                    if (captureAmount > reRemainingAmount)
+                        throw new CaptureAmountExceedsAuthorizedException(paymentId, captureAmount, reRemainingAmount);
+
+                    throw new InvalidOperationException("Capture failed for an unexpected reason.");
                 }
 
                 await _captureRepository.InsertCaptureEventAsync(dbConnection, dbTransaction, paymentId, captureAmount, timeNow);

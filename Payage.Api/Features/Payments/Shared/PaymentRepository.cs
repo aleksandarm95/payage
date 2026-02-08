@@ -13,6 +13,7 @@ namespace Payage.Api.Features.Payments.Shared
             amount AS Amount, 
             currency AS Currency, 
             captured_amount AS CapturedAmount,
+            refunded_amount AS RefundedAmount,
             masked_card_number AS MaskedCardNumber,
             cardholder_name AS CardholderName,
             created_at AS CreatedAt,

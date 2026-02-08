@@ -4,7 +4,9 @@ using Payage.Api.Common.Middleware;
 using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Features.Payments.Capture;
-using Payage.Api.Features.Payments.Capture.Model;
+using Payage.Api.Features.Payments.Capture.Models;
+using Payage.Api.Features.Payments.Refund;
+using Payage.Api.Features.Payments.Refund.Models;
 using Payage.Api.Features.Payments.Shared;
 using Payage.Api.Features.Payments.Void;
 using Payage.Api.Infrastructure.Db;
@@ -36,6 +38,10 @@ namespace Payage.Api
 
             builder.Services.AddScoped<VoidPaymentRepository>();
             builder.Services.AddScoped<VoidPaymentHandler>();
+
+            builder.Services.AddScoped<RefundPaymentHandler>();
+            builder.Services.AddScoped<RefundPaymentRepository>();
+            builder.Services.AddScoped<IValidator<RefundPaymentRequest>, RefundPaymentValidator>();
 
             builder.Services.AddScoped<PaymentRepository>();
 

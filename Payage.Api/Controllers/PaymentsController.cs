@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Features.Payments.Capture;
-using Payage.Api.Features.Payments.Capture.Model;
+using Payage.Api.Features.Payments.Capture.Models;
+using Payage.Api.Features.Payments.Refund;
+using Payage.Api.Features.Payments.Refund.Models;
 using Payage.Api.Features.Payments.Void;
 using Payage.Api.Features.Payments.Void.Models;
 
@@ -23,7 +25,7 @@ namespace Payage.Api.Controllers
         }
 
         [HttpPost("{id}/capture")]
-        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CapturePaymentResponse), StatusCodes.Status200OK)]
         public async Task<ActionResult<CapturePaymentResponse>> Capture([FromRoute] Guid id, [FromBody] CapturePaymentRequest capturePaymentRequest, [FromServices] CapturePaymentHandler capturePaymentHandler,
             CancellationToken cancellationToken)
         {
@@ -38,6 +40,16 @@ namespace Payage.Api.Controllers
              CancellationToken cancellationToken)
         {
             var response = await voidPaymentHandler.HandleAsync(id, cancellationToken);
+            return Ok(response);
+        }
+
+        [HttpPost("{id}/refund")]
+        [ProducesResponseType(typeof(RefundPaymentResponse), StatusCodes.Status200OK)]
+        public async Task<ActionResult<RefundPaymentResponse>> Refund([FromRoute] Guid id, [FromBody] RefundPaymentRequest refundPaymentRequest, [FromServices] RefundPaymentHandler refundPaymentHandler,
+            CancellationToken cancellationToken)
+        {
+            var response = await refundPaymentHandler.HandleAsync(id, refundPaymentRequest, cancellationToken);
+
             return Ok(response);
         }
     }

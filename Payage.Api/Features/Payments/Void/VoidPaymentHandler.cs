@@ -46,7 +46,10 @@ namespace Payage.Api.Features.Payments.Void
                     if (recheckPayment is null)
                         throw new TransactionNotFoundException(paymentId);
 
-                    throw new InvalidTransactionStateException(paymentId, recheckPayment.Status, Constants.VOID_STATUS);
+                    if (recheckPayment.Status != Constants.AUTHORIZE_STATUS)
+                        throw new InvalidTransactionStateException(paymentId, recheckPayment.Status, Constants.VOID_STATUS);
+
+                    throw new InvalidOperationException("Changing status to void failed for an unexpected reason.");
                 }
 
                 await _voidRepository.InsertVoidedEventAsync(dbConnection, dbTransaction, paymentId, timeNow);

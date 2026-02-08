@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using Payage.Api.Features.Payments.Capture.Model;
+using Payage.Api.Features.Payments.Capture.Models;
 using System.Data;
 
 namespace Payage.Api.Features.Payments.Capture
