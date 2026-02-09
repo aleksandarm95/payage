@@ -5,6 +5,7 @@ using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Features.Payments.Capture;
 using Payage.Api.Features.Payments.Capture.Models;
+using Payage.Api.Features.Payments.List;
 using Payage.Api.Features.Payments.Refund;
 using Payage.Api.Features.Payments.Refund.Models;
 using Payage.Api.Features.Payments.Shared;
@@ -45,6 +46,9 @@ namespace Payage.Api
 
             builder.Services.AddScoped<PaymentRepository>();
             builder.Services.AddScoped<PaymentHandler>();
+
+            builder.Services.AddScoped<ListPaymentsRepository>();
+            builder.Services.AddScoped<ListPaymentsHandler>();
 
             var app = builder.Build();
             app.UseMiddleware<ExceptionHandlingMiddleware>();

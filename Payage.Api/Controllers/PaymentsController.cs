@@ -3,6 +3,8 @@ using Payage.Api.Features.Payments.Authorize;
 using Payage.Api.Features.Payments.Authorize.Models;
 using Payage.Api.Features.Payments.Capture;
 using Payage.Api.Features.Payments.Capture.Models;
+using Payage.Api.Features.Payments.List;
+using Payage.Api.Features.Payments.List.Models;
 using Payage.Api.Features.Payments.Refund;
 using Payage.Api.Features.Payments.Refund.Models;
 using Payage.Api.Features.Payments.Shared;
@@ -61,6 +63,18 @@ namespace Payage.Api.Controllers
         public async Task<ActionResult<PaymentData>> GetById([FromRoute] Guid id, [FromServices] PaymentHandler handler, CancellationToken cancellationToken)
         {
             var response = await handler.HandleAsync(id, cancellationToken);
+            return Ok(response);
+        }
+
+        [HttpGet]
+        [ProducesResponseType(typeof(ListPaymentsResponse), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ListPaymentsResponse>> List([FromServices] ListPaymentsHandler handler, CancellationToken cancellationToken,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20, 
+            [FromQuery] string? status = null, [FromQuery] string? orderReference = null)
+        {
+            var response = await handler.HandleAsync(
+                new ListPaymentsQuery(Page: page, PageSize: pageSize, Status: status, OrderReference: orderReference), cancellationToken);
+
             return Ok(response);
         }
     }
