@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Payage.Api.Features.Payments.Capture.Models;
+using System.Collections.Generic;
 using System.Data;
 
 namespace Payage.Api.Features.Payments.Capture
@@ -10,7 +11,10 @@ namespace Payage.Api.Features.Payments.Capture
         UPDATE transactions
         SET
           captured_amount = captured_amount + @CaptureAmount,
-          status = 'CAPTURED',
+          status = CASE
+                      WHEN(captured_amount + @CaptureAmount) = amount THEN 'CAPTURED'
+                      ELSE status
+                   END,
           updated_at = @Now,
           row_version = row_version + 1
         WHERE

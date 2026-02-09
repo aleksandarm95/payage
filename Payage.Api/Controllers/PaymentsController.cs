@@ -27,6 +27,9 @@ namespace Payage.Api.Controllers
 
         [HttpPost("authorize")]
         [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<AuthorizePaymentResponse>> Authorize([FromBody] AuthorizePaymentRequest authorizePaymentRequest, [FromServices] AuthorizePaymentHandler authorizePaymentHandler,
             CancellationToken cancellationToken)
         {
@@ -40,6 +43,9 @@ namespace Payage.Api.Controllers
 
         [HttpPost("{id}/capture")]
         [ProducesResponseType(typeof(CapturePaymentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<CapturePaymentResponse>> Capture([FromRoute] Guid id, [FromBody] CapturePaymentRequest capturePaymentRequest, [FromServices] CapturePaymentHandler capturePaymentHandler,
             CancellationToken cancellationToken)
         {
@@ -51,6 +57,9 @@ namespace Payage.Api.Controllers
 
         [HttpPost("{id:guid}/void")]
         [ProducesResponseType(typeof(VoidPaymentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<VoidPaymentResponse>> Void([FromRoute] Guid id, [FromServices] VoidPaymentHandler voidPaymentHandler,
              CancellationToken cancellationToken)
         {
@@ -62,6 +71,9 @@ namespace Payage.Api.Controllers
 
         [HttpPost("{id}/refund")]
         [ProducesResponseType(typeof(RefundPaymentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RefundPaymentResponse>> Refund([FromRoute] Guid id, [FromBody] RefundPaymentRequest refundPaymentRequest, [FromServices] RefundPaymentHandler refundPaymentHandler,
             CancellationToken cancellationToken)
         {
@@ -74,6 +86,7 @@ namespace Payage.Api.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(PaymentData), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PaymentData>> GetById([FromRoute] Guid id, [FromServices] PaymentHandler handler, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Get transaction request received. PaymentId: {PaymentId}", id);
@@ -83,6 +96,8 @@ namespace Payage.Api.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(ListPaymentsResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ListPaymentsResponse>> List([FromServices] ListPaymentsHandler handler, CancellationToken cancellationToken,
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20, 
             [FromQuery] string? status = null, [FromQuery] string? orderReference = null)
