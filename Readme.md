@@ -59,7 +59,7 @@ Connection strings are stored in:
 Populate credentials from your database. Example:
 
 "ConnectionStrings": {
-  "Default": "Host=localhost;Port=5432;Database=payage;Username=postgres;Password=postgres"
+  "PayageDb": "Host=localhost;Port=5432;Database=payage;Username=postgres;Password=postgres"
 }
 
 ---
@@ -254,3 +254,47 @@ This ensures:
 404 - Transaction not found
 409 - Conflict (e.g., duplicate order reference)
 500 - Unexpected system error
+
+---
+
+## Assumptions, Design Decisions & Trade-offs
+
+### Business rules and Functional assumptions
+
+The payment lifecycle follows the rules from the task:
+
+- AUTHORIZED -> CAPTURED
+- AUTHORIZED -> VOIDED
+- CAPTURED -> REDUNDED
+
+If the amount is partially captured or partially refunded, there is no additional transition until the full amount is processed.
+Any other transition is rejected.
+
+### Error handling
+
+All business and validation errors are handled centrally using middleware.
+I introduced specific exception types (TransactionNotFound, InvalidTransactionState, CaptureAmountExceedsAuthorized, RefundAmountExceedsCaptured, OrderReferenceConflict) so that the middleware can translate them into precise HTTP responses.
+
+This approach keeps controllers and handlers clean and ensures:
+
+	- consistent response format
+	- easier maintenance
+	- clear mapping between domain errors and HTTP codes
+	
+### Persistence	
+
+The task explicitly required direct SQL access without ORMs.
+I chose Dapper because it keeps SQL visible and explicit while removing most of the boilerplate code required by ADO.NET (manual mapping, command creation, readers, etc.).
+Database constraints are used as an additional safety net beside application validation.
+
+
+### Future Improvements
+
+Given more time, I would try to improve the system in several areas:
+
+	- Add unit tests and integration/component tests that run against a real database to verify full workflows.
+	- Improve the logging by defining which events are critical for monitoring, auditing, and troubleshooting.
+	- Introduce idempotency keys with response replay to make retries fully safe.
+	- Implement stronger domain validations, e.g. deeper currency validation beyond length.
+	- Add authentication and role-based access control to control which clients are allowed to perform financial operations (outside the current assignment scope).
+	- Consider optimistic locking improvements and retry policies.
