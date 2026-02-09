@@ -15,13 +15,13 @@ namespace Payage.Api.Features.Payments.List
 
             if(!string.IsNullOrEmpty(status))
             {
-                whereParameters.Add("Status = @Status");
+                whereParameters.Add("status = @Status");
                 dynamicParameters.Add("Status", status);
             }
 
             if(!string.IsNullOrEmpty(orderReference))
             {
-                whereParameters.Add("OrderReference = @OrderReference");
+                whereParameters.Add("order_reference = @OrderReference");
                 dynamicParameters.Add("OrderReference", orderReference);
             }
 
@@ -33,13 +33,15 @@ namespace Payage.Api.Features.Payments.List
                 
                 var listSql = $@"
                 SELECT
-                  id,
-                  status,
-                  amount,
-                  currency,
+                  id AS Id,
+                  status AS Status,
+                  amount AS Amount,
+                  currency AS Currency,
                   order_reference AS OrderReference,
                   captured_amount AS CapturedAmount,
                   refunded_amount AS RefundedAmount,
+                  masked_card_number AS MaskedCardNumber,
+                  cardholder_name AS CardholderName,
                   created_at AS CreatedAt,
                   updated_at AS UpdatedAt
                 FROM transactions

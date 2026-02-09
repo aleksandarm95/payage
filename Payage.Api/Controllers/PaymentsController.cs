@@ -18,11 +18,21 @@ namespace Payage.Api.Controllers
     [Route("api/v1/payments")]
     public class PaymentsController : ControllerBase
     {
+        private readonly ILogger<PaymentsController> _logger;
+
+        public PaymentsController(ILogger<PaymentsController> logger)
+        {
+            _logger = logger;
+        }
+
         [HttpPost("authorize")]
         [ProducesResponseType(typeof(AuthorizePaymentResponse), StatusCodes.Status201Created)]
         public async Task<ActionResult<AuthorizePaymentResponse>> Authorize([FromBody] AuthorizePaymentRequest authorizePaymentRequest, [FromServices] AuthorizePaymentHandler authorizePaymentHandler,
             CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Authorize request received. OrderReference: {OrderReference} Amount: {Amount} {Currency}",
+                authorizePaymentRequest.OrderReference, authorizePaymentRequest.Amount, authorizePaymentRequest.Currency);
+
             var response = await authorizePaymentHandler.HandleAsync(authorizePaymentRequest, cancellationToken);
 
             return CreatedAtAction(nameof(Authorize), response);
@@ -33,6 +43,7 @@ namespace Payage.Api.Controllers
         public async Task<ActionResult<CapturePaymentResponse>> Capture([FromRoute] Guid id, [FromBody] CapturePaymentRequest capturePaymentRequest, [FromServices] CapturePaymentHandler capturePaymentHandler,
             CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Capture request received. PaymentId: {PaymentId} RequestedAmount: {RequestedAmount}", id, capturePaymentRequest.Amount);
             var response = await capturePaymentHandler.HandleAsync(id, capturePaymentRequest, cancellationToken);
 
             return Ok(response);
@@ -43,7 +54,9 @@ namespace Payage.Api.Controllers
         public async Task<ActionResult<VoidPaymentResponse>> Void([FromRoute] Guid id, [FromServices] VoidPaymentHandler voidPaymentHandler,
              CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Void request received. PaymentId: {PaymentId}", id);
             var response = await voidPaymentHandler.HandleAsync(id, cancellationToken);
+
             return Ok(response);
         }
 
@@ -52,6 +65,7 @@ namespace Payage.Api.Controllers
         public async Task<ActionResult<RefundPaymentResponse>> Refund([FromRoute] Guid id, [FromBody] RefundPaymentRequest refundPaymentRequest, [FromServices] RefundPaymentHandler refundPaymentHandler,
             CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Refund request received. PaymentId: {PaymentId} RequestedAmount: {RequestedAmount}", id, refundPaymentRequest.Amount);
             var response = await refundPaymentHandler.HandleAsync(id, refundPaymentRequest, cancellationToken);
 
             return Ok(response);
@@ -62,6 +76,7 @@ namespace Payage.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PaymentData>> GetById([FromRoute] Guid id, [FromServices] PaymentHandler handler, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Get transaction request received. PaymentId: {PaymentId}", id);
             var response = await handler.HandleAsync(id, cancellationToken);
             return Ok(response);
         }
@@ -72,6 +87,7 @@ namespace Payage.Api.Controllers
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20, 
             [FromQuery] string? status = null, [FromQuery] string? orderReference = null)
         {
+            _logger.LogInformation("List for transactions request received. Page: {Page} PageSize: {PageSize} Status: {Status} OrderReference: {OrderReference}", page, pageSize, status, orderReference);
             var response = await handler.HandleAsync(
                 new ListPaymentsQuery(Page: page, PageSize: pageSize, Status: status, OrderReference: orderReference), cancellationToken);
 

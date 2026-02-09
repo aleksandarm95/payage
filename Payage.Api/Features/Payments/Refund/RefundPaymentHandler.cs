@@ -1,13 +1,9 @@
 ﻿using FluentValidation;
 using Payage.Api.Common;
 using Payage.Api.Common.Exceptions;
-using Payage.Api.Features.Payments.Capture.Models;
 using Payage.Api.Features.Payments.Refund.Models;
 using Payage.Api.Features.Payments.Shared;
 using Payage.Api.Infrastructure.Db;
-using System.Data.Common;
-using System.Threading;
-using System.Transactions;
 
 namespace Payage.Api.Features.Payments.Refund
 {
@@ -17,13 +13,15 @@ namespace Payage.Api.Features.Payments.Refund
         private readonly RefundPaymentRepository _refundRepository;
         private readonly PaymentRepository _paymentRepository;
         private readonly IValidator<RefundPaymentRequest> _validator;
+        private readonly ILogger<RefundPaymentHandler> _logger;
 
-        public RefundPaymentHandler(IDbConnectionFactory db, RefundPaymentRepository repo, PaymentRepository payments, IValidator<RefundPaymentRequest> validator)
+        public RefundPaymentHandler(IDbConnectionFactory db, RefundPaymentRepository repo, PaymentRepository payments, IValidator<RefundPaymentRequest> validator, ILogger<RefundPaymentHandler> logger)
         {
             _dbConnectionFactory = db;
             _paymentRepository = payments;
             _refundRepository = repo;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<RefundPaymentResponse> HandleAsync(Guid paymentId, RefundPaymentRequest refundPaymentRequest, CancellationToken cancellationToken)
@@ -36,7 +34,9 @@ namespace Payage.Api.Features.Payments.Refund
 
             using var dbConnection = _dbConnectionFactory.Create();
             await ((dynamic)dbConnection).OpenAsync(cancellationToken);
+
             using var dbTransaction = dbConnection.BeginTransaction();
+            _logger.LogInformation("Started database transaction for payment {PaymentId}", paymentId);
 
             try
             {
@@ -58,6 +58,7 @@ namespace Payage.Api.Features.Payments.Refund
                 var updated = await _refundRepository.TryRefundAsync(dbConnection, dbTransaction, paymentId, refundAmount, timeNow);
                 if(updated == null)
                 {
+                    _logger.LogWarning("Refund update returned null for payment {PaymentId}, possible concurrency issue. Rechecking payment.", paymentId);
                     var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
                     if (recheckPayment == null)
                         throw new TransactionNotFoundException(paymentId);
@@ -75,12 +76,14 @@ namespace Payage.Api.Features.Payments.Refund
                 await _refundRepository.InsertRefundEventAsync(dbConnection, dbTransaction, paymentId, refundAmount, refundPaymentRequest.Reason ?? string.Empty, timeNow);
 
                 dbTransaction.Commit();
+                _logger.LogInformation("Payment {PaymentId} refunded successfully. RefundedAmount: {RefundedAmount} at {CreatedAt}", paymentId, refundAmount, timeNow);
 
                 return new RefundPaymentResponse(updated.Id, updated.Status, updated.Amount, updated.Currency, updated.CapturedAmount, updated.RefundedAmount, updated.UpdatedAt);
             }
-            catch
+            catch(Exception ex)
             {
                 dbTransaction.Rollback();
+                _logger.LogError(ex, "Unhandled error while refunding payment {PaymentId}", paymentId);
                 throw;
             }
         }

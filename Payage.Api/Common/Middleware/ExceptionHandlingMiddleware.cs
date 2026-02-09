@@ -1,17 +1,17 @@
 ﻿using FluentValidation;
 using Payage.Api.Common.Exceptions;
-using Payage.Api.Features.Payments.Authorize;
-using System.Net;
 
 namespace Payage.Api.Common.Middleware
 {
     public class ExceptionHandlingMiddleware
     {
         private RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(RequestDelegate next)
+        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -22,6 +22,9 @@ namespace Payage.Api.Common.Middleware
             }
             catch (ValidationException vEx)
             {
+                _logger.LogWarning("Validation failed for request. TraceId: {TraceId} Method: {Method} Path: {Path} Errors: {@Errors}",
+                   context.TraceIdentifier, context.Request.Method, context.Request.Path, vEx.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
@@ -36,6 +39,9 @@ namespace Payage.Api.Common.Middleware
             }
             catch(OrderReferenceConflictException orcEx)
             {
+                _logger.LogWarning(orcEx, "Order reference conflict. TraceId: {TraceId} Method: {Method} Path: {Path}",
+                    context.TraceIdentifier, context.Request.Method, context.Request.Path);
+
                 context.Response.StatusCode = StatusCodes.Status409Conflict;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
@@ -50,6 +56,9 @@ namespace Payage.Api.Common.Middleware
             }
             catch(TransactionNotFoundException tnEx)
             {
+                _logger.LogWarning(tnEx, "Transaction not found. TraceId: {TraceId} Method: {Method} Path: {Path}",
+                    context.TraceIdentifier, context.Request.Method, context.Request.Path);
+
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
@@ -64,6 +73,9 @@ namespace Payage.Api.Common.Middleware
             }
             catch(InvalidTransactionStateException invsEx)
             {
+                _logger.LogWarning(invsEx, "Invalid transaction state. TraceId: {TraceId} Method: {Method} Path: {Path}",
+                   context.TraceIdentifier, context.Request.Method, context.Request.Path);
+
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
@@ -77,6 +89,9 @@ namespace Payage.Api.Common.Middleware
             }
             catch (CaptureAmountExceedsAuthorizedException caeEx)
             {
+                _logger.LogWarning(caeEx, "Capture amount exceeds authorized. TraceId: {TraceId} Method: {Method} Path: {Path}",
+                    context.TraceIdentifier, context.Request.Method, context.Request.Path);
+
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
@@ -91,6 +106,9 @@ namespace Payage.Api.Common.Middleware
             }
             catch (RefundAmountExceedsCapturedException refEx)
             {
+                _logger.LogWarning(refEx, "Refund amount exceeds captured. TraceId: {TraceId} Method: {Method} Path: {Path}",
+                    context.TraceIdentifier, context.Request.Method, context.Request.Path);
+
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
@@ -103,8 +121,11 @@ namespace Payage.Api.Common.Middleware
                     }
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Unhandled exception while processing request. TraceId: {TraceId} Method: {Method} Path: {Path}",
+                    context.TraceIdentifier, context.Request.Method, context.Request.Path);
+
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new

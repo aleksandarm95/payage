@@ -11,12 +11,14 @@ namespace Payage.Api.Features.Payments.Void
         private readonly IDbConnectionFactory _dbConnectionFactory;
         private readonly VoidPaymentRepository _voidRepository;
         private readonly PaymentRepository _paymentRepository;
+        private readonly ILogger<VoidPaymentHandler> _logger;
 
-        public VoidPaymentHandler(IDbConnectionFactory db, VoidPaymentRepository repository, PaymentRepository paymentRepository)
+        public VoidPaymentHandler(IDbConnectionFactory db, VoidPaymentRepository repository, PaymentRepository paymentRepository, ILogger<VoidPaymentHandler> logger)
         {
             _dbConnectionFactory = db;
             _voidRepository = repository;
             _paymentRepository = paymentRepository;
+            _logger = logger;
         }
 
         public async Task<VoidPaymentResponse> HandleAsync(Guid paymentId, CancellationToken cancellationToken)
@@ -27,6 +29,7 @@ namespace Payage.Api.Features.Payments.Void
             await ((dynamic)dbConnection).OpenAsync(cancellationToken);
 
             using var dbTransaction = dbConnection.BeginTransaction();
+            _logger.LogInformation("Started database transaction for payment {PaymentId}", paymentId);
 
             try
             {
@@ -41,6 +44,7 @@ namespace Payage.Api.Features.Payments.Void
 
                 if (updated is null)
                 {
+                    _logger.LogWarning("Void update returned null for payment {PaymentId}, possible concurrency issue. Rechecking payment.", paymentId);
                     var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
 
                     if (recheckPayment is null)
@@ -54,12 +58,14 @@ namespace Payage.Api.Features.Payments.Void
 
                 await _voidRepository.InsertVoidedEventAsync(dbConnection, dbTransaction, paymentId, timeNow);
                 dbTransaction.Commit();
+                _logger.LogInformation("Payment {PaymentId} voided successfully at {TimeNow}", paymentId, timeNow);
 
                 return new VoidPaymentResponse(updated.Id, updated.Status, updated.Amount, updated.Currency, updated.UpdatedAt);
             }
-            catch
+            catch(Exception ex) 
             {
                 dbTransaction.Rollback();
+                _logger.LogError(ex, "Unhandled error while voiding payment {PaymentId}", paymentId);
                 throw;
             }
         }

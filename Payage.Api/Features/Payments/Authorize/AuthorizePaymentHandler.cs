@@ -13,12 +13,14 @@ namespace Payage.Api.Features.Payments.Authorize
         private readonly IDbConnectionFactory _dbConnectionFactory;
         private readonly IValidator<AuthorizePaymentRequest> _validator;
         private readonly AuthorizePaymentRepository _repository;
+        private readonly ILogger<AuthorizePaymentHandler> _logger;
 
-        public AuthorizePaymentHandler(IDbConnectionFactory dbConnectionFactory, AuthorizePaymentRepository repository, IValidator<AuthorizePaymentRequest> validator)
+        public AuthorizePaymentHandler(IDbConnectionFactory dbConnectionFactory, AuthorizePaymentRepository repository, IValidator<AuthorizePaymentRequest> validator, ILogger<AuthorizePaymentHandler> logger)
         {
             _dbConnectionFactory = dbConnectionFactory;
             _repository = repository;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<AuthorizePaymentResponse> HandleAsync(AuthorizePaymentRequest request, CancellationToken cancellationToken)
@@ -31,6 +33,9 @@ namespace Payage.Api.Features.Payments.Authorize
             var timeNow = DateTimeOffset.UtcNow;
             var id = Guid.NewGuid();
             var masked = MaskCard(request.CardNumber);
+
+            _logger.LogInformation("Validation passed. Preparing to authorize payment: {PaymentId} for OrderReference: {OrderReference}, Amount: {Amount} {Currency}",
+                id, request.OrderReference, request.Amount, request.Currency);
 
             using var dbConnection = _dbConnectionFactory.Create();
             await ((dynamic)dbConnection).OpenAsync(cancellationToken);
@@ -47,6 +52,8 @@ namespace Payage.Api.Features.Payments.Authorize
 
                 dbTransaction.Commit();
 
+                _logger.LogInformation("Payment {PaymentId} authorized successfully for OrderReference {OrderReference} at {CreatedAt}", id, request.OrderReference, timeNow);
+
                 return new AuthorizePaymentResponse(
                     Id: id,
                     Status: Constants.AUTHORIZE_STATUS,
@@ -59,11 +66,14 @@ namespace Payage.Api.Features.Payments.Authorize
             catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
             {
                 dbTransaction.Rollback();
+                _logger.LogWarning(ex,"Order reference conflict while authorizing payment {PaymentId} for OrderReference {OrderReference}",
+                   id, request.OrderReference);
                 throw new OrderReferenceConflictException(request.OrderReference, ex);
             }
-            catch
+            catch(Exception ex)
             {
                 dbTransaction.Rollback();
+                _logger.LogError(ex, "Unhandled error while authorizing payment {PaymentId} for OrderReference {OrderReference}", id, request.OrderReference);
                 throw;
             }
         }
