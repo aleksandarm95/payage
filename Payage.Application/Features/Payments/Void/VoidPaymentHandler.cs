@@ -1,0 +1,73 @@
+﻿using Microsoft.Extensions.Logging;
+using Payage.Application.Abstractions;
+using Payage.Application.Features.Payments.Void.Models;
+using Payage.Application.Exceptions;
+using Payage.Domain;
+
+namespace Payage.Application.Features.Payments.Void
+{
+    public class VoidPaymentHandler
+    {
+        private readonly IDbConnectionFactory _dbConnectionFactory;
+        private readonly IVoidPaymentRepository _voidRepository;
+        private readonly IPaymentRepository _paymentRepository;
+        private readonly ILogger<VoidPaymentHandler> _logger;
+
+        public VoidPaymentHandler(IDbConnectionFactory db, IVoidPaymentRepository repository, IPaymentRepository paymentRepository, ILogger<VoidPaymentHandler> logger)
+        {
+            _dbConnectionFactory = db;
+            _voidRepository = repository;
+            _paymentRepository = paymentRepository;
+            _logger = logger;
+        }
+
+        public async Task<VoidPaymentResponse> HandleAsync(Guid paymentId, CancellationToken cancellationToken)
+        {
+            var timeNow = DateTimeOffset.UtcNow;
+
+            using var dbConnection = _dbConnectionFactory.Create();
+            await ((dynamic)dbConnection).OpenAsync(cancellationToken);
+
+            using var dbTransaction = dbConnection.BeginTransaction();
+            _logger.LogInformation("Started database transaction for payment {PaymentId}", paymentId);
+
+            try
+            {
+                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
+                if (currentPayment == null)
+                    throw new TransactionNotFoundException(paymentId);
+
+                if (currentPayment.Status != Constants.AUTHORIZE_STATUS)
+                    throw new InvalidTransactionStateException(paymentId, currentPayment.Status, Constants.VOID_STATUS);
+
+                var updated = await _voidRepository.TryVoidAsync(dbConnection, dbTransaction, paymentId, timeNow);
+
+                if (updated is null)
+                {
+                    _logger.LogWarning("Void update returned null for payment {PaymentId}, possible concurrency issue. Rechecking payment.", paymentId);
+                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
+
+                    if (recheckPayment is null)
+                        throw new TransactionNotFoundException(paymentId);
+
+                    if (recheckPayment.Status != Constants.AUTHORIZE_STATUS)
+                        throw new InvalidTransactionStateException(paymentId, recheckPayment.Status, Constants.VOID_STATUS);
+
+                    throw new InvalidOperationException("Changing status to void failed for an unexpected reason.");
+                }
+
+                await _voidRepository.InsertVoidedEventAsync(dbConnection, dbTransaction, paymentId, timeNow);
+                dbTransaction.Commit();
+                _logger.LogInformation("Payment {PaymentId} voided successfully at {TimeNow}", paymentId, timeNow);
+
+                return new VoidPaymentResponse(updated.Id, updated.Status, updated.Amount, updated.Currency, updated.UpdatedAt);
+            }
+            catch(Exception ex) 
+            {
+                dbTransaction.Rollback();
+                _logger.LogError(ex, "Unhandled error while voiding payment {PaymentId}", paymentId);
+                throw;
+            }
+        }
+    }
+}

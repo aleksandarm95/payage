@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36915.13 d17.14
+VisualStudioVersion = 17.14.36915.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payage.Api", "Payage.Api\Payage.Api.csproj", "{21DD760C-754D-444D-A91B-F61E3C43CD67}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payage.Application", "Payage.Application\Payage.Application.csproj", "{343B37D6-6508-4EA6-B718-7DF198159F20}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payage.Domain", "Payage.Domain\Payage.Domain.csproj", "{80A8103C-F555-49DF-9B50-77627EAF8BA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payage.Infrastructure", "Payage.Infrastructure\Payage.Infrastructure.csproj", "{D15E674C-3020-4E58-B32F-F2BBF0225121}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{21DD760C-754D-444D-A91B-F61E3C43CD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21DD760C-754D-444D-A91B-F61E3C43CD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21DD760C-754D-444D-A91B-F61E3C43CD67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{343B37D6-6508-4EA6-B718-7DF198159F20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{343B37D6-6508-4EA6-B718-7DF198159F20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{343B37D6-6508-4EA6-B718-7DF198159F20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{343B37D6-6508-4EA6-B718-7DF198159F20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80A8103C-F555-49DF-9B50-77627EAF8BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80A8103C-F555-49DF-9B50-77627EAF8BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80A8103C-F555-49DF-9B50-77627EAF8BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80A8103C-F555-49DF-9B50-77627EAF8BA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D15E674C-3020-4E58-B32F-F2BBF0225121}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D15E674C-3020-4E58-B32F-F2BBF0225121}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D15E674C-3020-4E58-B32F-F2BBF0225121}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D15E674C-3020-4E58-B32F-F2BBF0225121}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

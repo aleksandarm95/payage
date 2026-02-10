@@ -1,0 +1,11 @@
+﻿namespace Payage.Application.Features.Payments.Void.Models
+{
+    public class VoidPaymentData
+    {
+        public Guid Id { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string Currency { get; set; } = string.Empty;
+        public DateTimeOffset UpdatedAt { get; set; }
+    }
+}

@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
-using Payage.Api.Features.Payments.Authorize;
-using Payage.Api.Features.Payments.Authorize.Models;
-using Payage.Api.Features.Payments.Capture;
-using Payage.Api.Features.Payments.Capture.Models;
-using Payage.Api.Features.Payments.List;
-using Payage.Api.Features.Payments.List.Models;
-using Payage.Api.Features.Payments.Refund;
-using Payage.Api.Features.Payments.Refund.Models;
-using Payage.Api.Features.Payments.Shared;
-using Payage.Api.Features.Payments.Shared.Models;
-using Payage.Api.Features.Payments.Void;
-using Payage.Api.Features.Payments.Void.Models;
+using Payage.Application.Features.Payments.Authorize;
+using Payage.Application.Features.Payments.Authorize.Models;
+using Payage.Application.Features.Payments.Capture;
+using Payage.Application.Features.Payments.Capture.Models;
+using Payage.Application.Features.Payments.List;
+using Payage.Application.Features.Payments.List.Models;
+using Payage.Application.Features.Payments.Refund;
+using Payage.Application.Features.Payments.Refund.Models;
+using Payage.Application.Features.Payments.Shared;
+using Payage.Application.Features.Payments.Shared.Models;
+using Payage.Application.Features.Payments.Void;
+using Payage.Application.Features.Payments.Void.Models;
 
 namespace Payage.Api.Controllers
 {

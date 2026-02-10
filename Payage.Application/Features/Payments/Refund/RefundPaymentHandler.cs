@@ -1,0 +1,91 @@
+﻿using FluentValidation;
+using Microsoft.Extensions.Logging;
+using Payage.Application.Abstractions;
+using Payage.Application.Features.Payments.Refund.Models;
+using Payage.Domain;
+using Payage.Application.Exceptions;
+
+namespace Payage.Application.Features.Payments.Refund
+{
+    public class RefundPaymentHandler
+    {
+        private readonly IDbConnectionFactory _dbConnectionFactory;
+        private readonly IRefundPaymentRepository _refundRepository;
+        private readonly IPaymentRepository _paymentRepository;
+        private readonly IValidator<RefundPaymentRequest> _validator;
+        private readonly ILogger<RefundPaymentHandler> _logger;
+
+        public RefundPaymentHandler(IDbConnectionFactory db, IRefundPaymentRepository repo, IPaymentRepository payments, IValidator<RefundPaymentRequest> validator, ILogger<RefundPaymentHandler> logger)
+        {
+            _dbConnectionFactory = db;
+            _paymentRepository = payments;
+            _refundRepository = repo;
+            _validator = validator;
+            _logger = logger;
+        }
+
+        public async Task<RefundPaymentResponse> HandleAsync(Guid paymentId, RefundPaymentRequest refundPaymentRequest, CancellationToken cancellationToken)
+        {
+            var validation = await _validator.ValidateAsync(refundPaymentRequest, cancellationToken);
+            if (!validation.IsValid)
+                throw new ValidationException(validation.Errors);
+
+            var timeNow = DateTimeOffset.UtcNow;
+
+            using var dbConnection = _dbConnectionFactory.Create();
+            await ((dynamic)dbConnection).OpenAsync(cancellationToken);
+
+            using var dbTransaction = dbConnection.BeginTransaction();
+            _logger.LogInformation("Started database transaction for payment {PaymentId}", paymentId);
+
+            try
+            {
+                var currentPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
+                if (currentPayment == null)
+                    throw new TransactionNotFoundException(paymentId);
+
+                if (currentPayment.Status != Constants.CAPTURE_STATUS)
+                    throw new InvalidTransactionStateException(paymentId, currentPayment.Status, Constants.REFUND_STATUS);
+
+                var remainingAmount = currentPayment.CapturedAmount - currentPayment.RefundedAmount;
+                if (remainingAmount <= 0)
+                    throw new RefundAmountExceedsCapturedException(paymentId, currentPayment.RefundedAmount, currentPayment.CapturedAmount);
+
+                var refundAmount = refundPaymentRequest.Amount ?? remainingAmount;
+                if(refundAmount > remainingAmount)
+                    throw new RefundAmountExceedsCapturedException(paymentId, refundAmount, remainingAmount);
+
+                var updated = await _refundRepository.TryRefundAsync(dbConnection, dbTransaction, paymentId, refundAmount, timeNow);
+                if(updated == null)
+                {
+                    _logger.LogWarning("Refund update returned null for payment {PaymentId}, possible concurrency issue. Rechecking payment.", paymentId);
+                    var recheckPayment = await _paymentRepository.GetPaymentAsync(dbConnection, dbTransaction, paymentId);
+                    if (recheckPayment == null)
+                        throw new TransactionNotFoundException(paymentId);
+
+                    if (recheckPayment.Status != Constants.CAPTURE_STATUS)
+                        throw new InvalidTransactionStateException(paymentId, recheckPayment.Status, Constants.REFUND_STATUS);
+
+                    var reRemainingAmount = recheckPayment.CapturedAmount - recheckPayment.RefundedAmount;
+                    if(refundAmount > reRemainingAmount)
+                        throw new RefundAmountExceedsCapturedException(paymentId, refundAmount, reRemainingAmount);
+                    
+                    throw new InvalidOperationException("Refund failed for an unexpected reason.");
+                }
+
+                await _refundRepository.InsertRefundEventAsync(dbConnection, dbTransaction, paymentId, refundAmount, refundPaymentRequest.Reason ?? string.Empty, timeNow);
+
+                dbTransaction.Commit();
+                _logger.LogInformation("Payment {PaymentId} refunded successfully. RefundedAmount: {RefundedAmount} at {CreatedAt}", paymentId, refundAmount, timeNow);
+
+                return new RefundPaymentResponse(updated.Id, updated.Status, updated.Amount, updated.Currency, updated.CapturedAmount, updated.RefundedAmount, updated.UpdatedAt);
+            }
+            catch(Exception ex)
+            {
+                dbTransaction.Rollback();
+                _logger.LogError(ex, "Unhandled error while refunding payment {PaymentId}", paymentId);
+                throw;
+            }
+        }
+    }
+}
